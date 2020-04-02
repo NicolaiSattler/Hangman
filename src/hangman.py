@@ -1,4 +1,6 @@
 import os
+import sys
+import pyfiglet
 from getpass import getpass
 
 from character import Character
@@ -6,12 +8,16 @@ from character import Character
 class Hangman:
 
     def __init__(self):
-        self.welcome_text = "Welcome to hangman.\nPlease enter a word to start the game...\nEnjoy!\n\n"
+        self.hangman_ansii_text = "Hangman!"
+        self.awesome_ansii_text = "Awesome!"
+        self.game_over_ansii_text = "Game Over..."
+        self.welcome_text = "Please enter a word to start the game...\n\nEnjoy!\n\n"
         self.enter_word_text = "Word of choice:"
         self.enter_word_error_text = "No word was supplied"
         self.enter_character_text = "Start guessing...\n\n"
         self.invalid_input = "Invalid input...\n"
         self.victory_text = "You have awnsered correctly!\n\nStart a new game? Yes (Y) or No (N)? "
+        self.game_over_text = "You were not able to guess the correct awnser.\n\nWould you like to try again? Yes (Y) or No (N)?"
         self.characterList = []
         self.lettersAttempted = 0
         self.maxAttempts = 10
@@ -20,6 +26,9 @@ class Hangman:
         self.invalidInput = False
        
     def StartGame(self):
+        title_ansii = pyfiglet.figlet_format(self.hangman_ansii_text)
+
+        print(title_ansii + '\n')
         print(self.welcome_text)
 
         self.awnser = self.UserSuppliesWord()
@@ -28,22 +37,29 @@ class Hangman:
         self.ClearText()
         self.WriteInputInstructions()
 
-    def EndGame(self):
+    def EndGame(self, gameover: bool):
         self.invalidInput = False
+        self.lettersAttempted = 0
         self.ClearText()
-
-        result = input(self.victory_text)
+        
+        title_text = self.awesome_ansii_text if gameover == False else self.game_over_ansii_text
+        action_text = self.victory_text if gameover == False else self.game_over_text
+        
+        print(pyfiglet.figlet_format(title_text))
+        
+        result = input(action_text)
 
         if result.upper() == 'Y':
             self.ClearText()
             self.StartGame()
         elif result.upper() == 'N':
-            return
+            self.ClearText()
+            sys.exit("Game ended...")
         else:
             self.invalidInput = True
 
             print("Invalid Input..")
-            self.EndGame()
+            self.EndGame(gameover)
 
     def ClearText(self):
         os.system('cls' if os.name == 'nt' else "printf '\033c'")
@@ -55,20 +71,29 @@ class Hangman:
         self.IncreaseAttemptCount()
         self.ClearText()
         self.WriteAwnser()
+        
+        attemptString = "Attempt {0} of {1}:".format(self.lettersAttempted, self.maxAttempts)
 
-        result = input(f'Attempt {self.lettersAttempted} of {self.maxAttempts}:')
+        result = input(attemptString)
         length = len(result)
 
         if length == 0:
             print(self.invalid_input)
         elif length == 1:
             self.onKeyPress(result)
+            wordFound = self.ValidateAwnser()
+
+            if wordFound == True:
+                self.EndGame(False)
         elif length > 1:
             if result.lower() == self.awnser:
-                self.EndGame()
+                self.EndGame(False)
             else:
                 self.IncreaseAttemptCount()
                 print("Wrong awnser, pentaly point...\n")
+        
+        if self.lettersAttempted == self.maxAttempts:
+            self.EndGame(True)
 
         self.WriteInputInstructions()
 
@@ -80,7 +105,7 @@ class Hangman:
 
             for item in self.characterList:
                 if not item.hidden and i in item.indexes:
-                    awnser+=f'{item.character} '
+                    awnser+= item.character + ' '
                     found = True
                     break
 
@@ -88,6 +113,15 @@ class Hangman:
                awnser+="_ "
 
         print(awnser + '\n')
+
+    def ValidateAwnser(self) -> bool:
+        allCharactersFound = True
+
+        for item in self.characterList:
+            if item.hidden == True:
+                allCharactersFound = False
+                break
+        return allCharactersFound
 
     def onKeyPress(self, letter: str):
         for item in self.characterList:
