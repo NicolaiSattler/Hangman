@@ -51,6 +51,7 @@ class Hangman:
 
         if result.upper() == 'Y':
             self.ClearText()
+            self.ClearCharacters()
             self.StartGame()
         elif result.upper() == 'N':
             self.ClearText()
@@ -60,6 +61,9 @@ class Hangman:
 
             print("Invalid Input..")
             self.EndGame(gameover)
+
+    def ClearCharacters(self):
+        self.characterList = [];
 
     def ClearText(self):
         os.system('cls' if os.name == 'nt' else "printf '\033c'")
